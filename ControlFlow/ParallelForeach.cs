@@ -107,6 +107,8 @@ namespace ControlFlow
                 return result;
             }
 
+            results.Add(result);
+            currentBlock = null;
             return await Execute(blocks);
         }
     }
