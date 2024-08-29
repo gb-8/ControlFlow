@@ -20,14 +20,15 @@ namespace ControlFlow
 
         public static Sequence Create(params IBlock[] blocks) => new Sequence(blocks.ToList(), 0);
 
-        public BlockExecutionResult Execute() => Execute(new List<IMessage>());
+        public async Task<BlockExecutionResult> Execute() => await Execute(new List<IMessage>());
         
 
-        private BlockExecutionResult Execute(List<IMessage> messages)
+        private async Task<BlockExecutionResult> Execute(List<IMessage> messages)
         {
+            await Task.CompletedTask;
             foreach (var block in this.Blocks.Skip(this.ProgressIndex))
             {
-                var result = block.Execute();
+                var result = await block.Execute();
                 messages.AddRange(result.Messages);
                 if (result.Status == ExecutionStatus.Executing)
                 {
@@ -45,10 +46,11 @@ namespace ControlFlow
             return BlockExecutionResult.Succeeded([.. messages]);
         }
 
-        public BlockExecutionResult Handle(IMessage message)
+        public async Task<BlockExecutionResult> Handle(IMessage message)
         {
+            await Task.CompletedTask;
             var messages = new List<IMessage>();
-            var result = this.Blocks[ProgressIndex].Handle(message);
+            var result = await this.Blocks[ProgressIndex].Handle(message);
             if (result.Status == ExecutionStatus.Unexecuted)
             {
                 // Do we need to distinguish unexecuted vs message ignored?
@@ -62,7 +64,7 @@ namespace ControlFlow
 
             ++this.ProgressIndex;
             messages.AddRange(result.Messages);
-            return Execute(messages);
+            return await Execute(messages);
         }
     }
 }

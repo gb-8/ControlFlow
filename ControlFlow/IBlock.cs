@@ -2,7 +2,7 @@
 {
     public interface IBlock
     {
-        BlockExecutionResult Execute();
-        BlockExecutionResult Handle(IMessage message);
+        Task<BlockExecutionResult> Execute();
+        Task<BlockExecutionResult> Handle(IMessage message);
     }
 }

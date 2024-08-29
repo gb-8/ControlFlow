@@ -10,6 +10,12 @@
 
         public static BlockExecutionResult Unhandled() => new BlockExecutionResult(ExecutionStatus.Unexecuted, null);
 
+        public static BlockExecutionResult Aggregate(params BlockExecutionResult[] results) =>
+            new BlockExecutionResult(
+                results.Any(r => r.Status == ExecutionStatus.Executing) ? ExecutionStatus.Executing : ExecutionStatus.Complete,
+                results.Where(r => r.Exception != null).Select(r => r.Exception).FirstOrDefault(),
+                results.SelectMany(r => r.Messages).ToArray());
+
         private BlockExecutionResult(ExecutionStatus status, Exception? ex, params IMessage[] messages)
         {
             Status = status;

@@ -3,21 +3,24 @@
 
     public class ProceduralBlock : IBlock
     {
-        private readonly Action action;
+        private readonly Func<Task> action;
 
-        private ProceduralBlock(Action action)
+        private ProceduralBlock(Func<Task> action)
         {
             this.action = action;
         }
 
         public static ProceduralBlock Create(string text) =>
-            new ProceduralBlock(() => Console.WriteLine(text));
+            new ProceduralBlock(async () => { await Task.CompletedTask; Console.WriteLine(text); });
 
-        public BlockExecutionResult Execute()
+        public static ProceduralBlock CreateWithDelay(int seconds, string text) =>
+            new ProceduralBlock(async () => { await Task.Delay(TimeSpan.FromSeconds(seconds)); Console.WriteLine(text); });
+
+        public async Task<BlockExecutionResult> Execute()
         {
             try
             {
-                action();
+                await action();
                 return BlockExecutionResult.Succeeded();
             }
             catch (Exception ex)
@@ -26,8 +29,9 @@
             }
         }
 
-        public BlockExecutionResult Handle(IMessage @event)
+        public async Task<BlockExecutionResult> Handle(IMessage @event)
         {
+            await Task.CompletedTask;
             // TODO: Return silently instead?
             throw new NotSupportedException("Procedural blocks do not handle events.");
         }

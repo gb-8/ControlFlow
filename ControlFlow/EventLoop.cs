@@ -15,13 +15,18 @@ namespace ControlFlow
             this.integrator = integrator;
         }
 
-        public void Start(IBlock block)
+        public async Task Start(IBlock block)
         {
-            var executionResult = block.Execute();
+            var executionResult = await block.Execute();
             while (executionResult.Status == ExecutionStatus.Executing)
             {
-                var @event = integrator.HandleSideEffect(executionResult.Messages.First());
-                executionResult = block.Handle(@event);
+                var results = new List<BlockExecutionResult>();
+                foreach (var message in executionResult.Messages)
+                {
+                    var @event = integrator.HandleSideEffect(message);
+                    results.Add(await block.Handle(@event));
+                    executionResult = BlockExecutionResult.Aggregate(results.ToArray());
+                }
             }
         }
     }

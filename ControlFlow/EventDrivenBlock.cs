@@ -21,13 +21,13 @@ namespace ControlFlow
         public static EventDrivenBlock Create(string text) =>
             new EventDrivenBlock(Guid.NewGuid(), false, text);
 
-        public BlockExecutionResult Execute()
+        public async Task<BlockExecutionResult> Execute()
         {
             var sideEffect = new StartSideEffect(Id);
             return BlockExecutionResult.Executing(sideEffect);
         }
 
-        public BlockExecutionResult Handle(IMessage message)
+        public async Task<BlockExecutionResult> Handle(IMessage message)
         {
             // TODO: We would actually match by message-specific fields.
             if (message.Id != this.Id)
