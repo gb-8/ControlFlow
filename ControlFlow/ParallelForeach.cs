@@ -68,11 +68,9 @@ namespace ControlFlow
         public async Task<BlockExecutionResult> Execute(ConcurrentQueue<IBlock> blocks)
         {
             Console.WriteLine($"Executing slot {label}");
-            bool executedSomething = false;
             var messages = new List<IMessage>();
             while (blocks.TryDequeue(out IBlock? nextBlock))
             {
-                executedSomething = true;
                 Console.WriteLine($"Executing block in slot {label}");
                 var result = await nextBlock.Execute();
                 if (result.Status == ExecutionStatus.Complete)
@@ -93,9 +91,7 @@ namespace ControlFlow
                 }
             }
 
-            return executedSomething
-                ? BlockExecutionResult.Executing(messages.ToArray())
-                : BlockExecutionResult.Succeeded(messages.ToArray());
+            return BlockExecutionResult.Succeeded(messages.ToArray());
         }
 
         public async Task<BlockExecutionResult> Handle(IMessage message, ConcurrentQueue<IBlock> blocks)
