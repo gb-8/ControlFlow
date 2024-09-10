@@ -1,4 +1,4 @@
-﻿namespace ControlFlow
+﻿namespace ControlFlow.Framework
 {
     public class BlockExecutionResult
     {
@@ -7,8 +7,6 @@
         public static BlockExecutionResult Failed(Exception ex, params IMessage[] messages) => new BlockExecutionResult(ExecutionStatus.Complete, ex);
 
         public static BlockExecutionResult Executing(params IMessage[] events) => new BlockExecutionResult(ExecutionStatus.Executing, null, events);
-
-        public static BlockExecutionResult Unhandled() => new BlockExecutionResult(ExecutionStatus.Unexecuted, null);
 
         public static BlockExecutionResult Aggregate(params BlockExecutionResult[] results) =>
             new BlockExecutionResult(

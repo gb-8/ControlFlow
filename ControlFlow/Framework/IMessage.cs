@@ -1,4 +1,4 @@
-﻿namespace ControlFlow
+﻿namespace ControlFlow.Framework
 {
     public interface IMessage
     {

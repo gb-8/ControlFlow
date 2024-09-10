@@ -1,11 +1,11 @@
-﻿namespace ControlFlow
+﻿namespace ControlFlow.Framework
 {
 
     public class ProceduralBlock : IBlock
     {
         private readonly Func<Task> action;
 
-        private ProceduralBlock(Func<Task> action)
+        protected ProceduralBlock(Func<Task> action)
         {
             this.action = action;
         }

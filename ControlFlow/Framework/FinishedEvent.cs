@@ -1,8 +1,8 @@
-﻿namespace ControlFlow
+﻿namespace ControlFlow.Framework
 {
     public class FinishedEvent : IMessage
     {
-        public FinishedEvent(Guid id) => this.Id = id;
+        public FinishedEvent(Guid id) => Id = id;
 
         public Guid Id { get; }
 

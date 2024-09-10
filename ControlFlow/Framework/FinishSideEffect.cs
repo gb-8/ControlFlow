@@ -4,11 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ControlFlow
+namespace ControlFlow.Framework
 {
-    public class StartSideEffect : IMessage
+    public class FinishSideEffect : IMessage
     {
-        public StartSideEffect(Guid id) => this.Id = id;
+        public FinishSideEffect(Guid id) => Id = id;
 
         public Guid Id { get; }
     }

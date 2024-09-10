@@ -1,11 +1,12 @@
-﻿using System;
+﻿using Serilog;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ControlFlow
+namespace ControlFlow.Framework
 {
     public class ParallelForeach : IBlock
     {
@@ -25,25 +26,33 @@ namespace ControlFlow
 
         public ParallelForeach(List<Slot> slots, List<IBlock> blocks, List<BlockExecutionResult> results)
         {
-            this.Results = results;
-            this.Slots = slots;
-            this.UnstartedBlocks = new ConcurrentQueue<IBlock>();
+            Results = results;
+            Slots = slots;
+            UnstartedBlocks = new ConcurrentQueue<IBlock>();
             foreach (var block in blocks)
             {
-                this.UnstartedBlocks.Enqueue(block);
+                UnstartedBlocks.Enqueue(block);
             }
         }
 
         public async Task<BlockExecutionResult> Execute()
         {
-            var results = await Task.WhenAll(this.Slots.Select(async s => await s.Execute(this.UnstartedBlocks)));
-            return BlockExecutionResult.Aggregate(results);
+            Log.Logger.Debug("ParallelForeach: Executing.");
+            var results = await Task.WhenAll(Slots.Select(async s => await s.Execute(UnstartedBlocks)));
+            Log.Logger.Debug("ParallelForeach: execution results {results}", string.Join(", ", results.Select(r => r.Status)));
+            var aggregateResult = BlockExecutionResult.Aggregate(results);
+            Log.Logger.Debug("ParallelForeach: Aggregate execution result: {result}.", aggregateResult.Status);
+            return aggregateResult;
         }
 
         public async Task<BlockExecutionResult> Handle(IMessage message)
         {
-            var results = await Task.WhenAll(this.Slots.Select(s => s.Handle(message, this.UnstartedBlocks)));
-            return BlockExecutionResult.Aggregate(results);
+            Log.Logger.Debug("ParallelForeach: Handling message.");
+            var results = await Task.WhenAll(Slots.Select(s => s.Handle(message, UnstartedBlocks)));
+            Log.Logger.Debug("ParallelForeach: message handling results {results}", string.Join(", ", results.Select(r => r.Status)));
+            var aggregateResult = BlockExecutionResult.Aggregate(results);
+            Log.Logger.Debug("ParallelForeach: Aggregate message handling result: {result}.", aggregateResult.Status);
+            return aggregateResult;
         }
     }
 
@@ -67,20 +76,22 @@ namespace ControlFlow
 
         public async Task<BlockExecutionResult> Execute(ConcurrentQueue<IBlock> blocks)
         {
-            Console.WriteLine($"Executing slot {label}");
+            Log.Logger.Debug("Slot: Executing slot {label}", label);
             var messages = new List<IMessage>();
             while (blocks.TryDequeue(out IBlock? nextBlock))
             {
-                Console.WriteLine($"Executing block in slot {label}");
+                Log.Logger.Debug("Slot: Executing block in slot {label}", label);
                 var result = await nextBlock.Execute();
                 if (result.Status == ExecutionStatus.Complete)
                 {
+                    Log.Logger.Debug("Slot: block in slot {label} completed", label);
                     messages.AddRange(result.Messages);
-                    this.results.Add(result);
-                    this.executedBlocks.Add(nextBlock);
+                    results.Add(result);
+                    executedBlocks.Add(nextBlock);
                 }
                 else if (result.Status == ExecutionStatus.Executing)
                 {
+                    Log.Logger.Debug("Slot: block in slot {label} still executing", label);
                     messages.AddRange(result.Messages);
                     currentBlock = nextBlock;
                     return BlockExecutionResult.Executing(result.Messages.ToArray());
@@ -91,20 +102,28 @@ namespace ControlFlow
                 }
             }
 
+            Log.Logger.Debug("Slot: completed", label);
             return BlockExecutionResult.Succeeded(messages.ToArray());
         }
 
         public async Task<BlockExecutionResult> Handle(IMessage message, ConcurrentQueue<IBlock> blocks)
         {
-            if (currentBlock == null) return BlockExecutionResult.Unhandled();
+            Log.Logger.Debug("Slot: handling message in slot {label}", label);
+            if (currentBlock == null)
+            {
+                Log.Logger.Debug("Slot: no block, so must have completed in slot {label}", label);
+                return BlockExecutionResult.Succeeded();
+            }
             var result = await currentBlock.Handle(message);
             if (result.Status != ExecutionStatus.Complete)
             {
+                Log.Logger.Debug("Slot: current block incomplete", label);
                 return result;
             }
 
             results.Add(result);
             currentBlock = null;
+            Log.Logger.Debug("Slot: block complete in slot {label}, so re-executing", label);
             return await Execute(blocks);
         }
     }
